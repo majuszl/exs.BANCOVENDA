@@ -1,0 +1,62 @@
+/* 1. Altere a tabela de débitos para corrigir o campo situacao_debito. Se o débito estiver 
+ * vencido e não for 'Negociado' nem 'Pago', informe 'Atrasado'. */
+
+/* 2. Altere a tabela de débitos para corrigir o campo situacao_debito. 
+ * Se o débito não estiver vencido e não for 'Pago', informe 'Pendente'. */
+
+/* 3. Altere a tabela de débitos para corrigir o campo data de vencimento. 
+ * Se o débito estiver com a situação 'Negociado', altere o ano da data de vencimento para ano - 5 anos. */
+
+/* 4. Selecione o nome, e-mail e telefone de todas as pessoas.*/
+SELECT PESSOA.NOME, PESSOA.EMAIL, PESSOA.TELEFONE 
+FROM PESSOA
+
+/* 5. Liste os produtos com preço unitário acima de R$ 100.*/
+SELECT PRECO_UNITARIO FROM PRODUTO p 
+WHERE PRECO_UNITARIO > 100
+
+/* 6. Retorne todas as vendas realizadas em uma determinada data.*/
+SELECT DATA_VENDA FROM VENDA v 
+WHERE DATA_VENDA = '2023-12-23'
+
+/* 7. Mostre o nome, a data de nascimento e a idade dos fornecedores que não têm produtos em estoque./*
+
+
+/* 8. Liste os clientes que já realizaram compras com débitos vencidos.*/
+
+/* 9. Selecione os clientes que possuem itens no carrinho de compras e possuem débitos vencidos.*/
+
+/* 10. Selecione os 10 maiores devedores trazendo código, nome, idade e a 
+ * soma total dos débitos vencidos e a soma total dos débitos pagos.*/
+
+/* 11. Atualize o preço unitário de todos os produtos com estoque inferior a 10 unidades para mais 10%.*/
+
+/* 12. Modifique o status de entrega para 'Concluído' em todas as entregas realizadas antes de '2024-01-01'.*/
+
+/* 13. Altere todos os débitos que estão com situação = 'Atrasado' para 'Pagos' 
+ * se o mesmo ter o registro na tabela de pagamento.*/
+
+/* 15. Selecione as vendas entre o mês de dezembro de 2023 até janeiro de 2024.*/
+
+/* 16. Liste os produtos com estoque entre 5 e 20 unidades.*/
+
+/* 17. Retorne todas as pessoas com nomes que começam com 'A'.*/
+
+/* 18. Selecione os produtos que não foram vendidos.*/
+
+/* 19. Liste os produtos vendidos para os clientes 'Carla Souza', 'Larissa Ferreira'.*/
+
+/* 20. Mostre as pessoas que são clientes OU fornecedores.*/
+
+/* 21. Retorne todas as informações da venda com detalhes do cliente e forma de pagamento.*/
+
+/* 22. Mostre todas as compras de um determinado produto ('Placa de Captura'), incluindo detalhes do produto.*/
+
+/* 23. Combine os nomes dos fornecedores com os nomes dos clientes e suas respectivas 
+ * idades que irão fazer no ano de 2025.*/
+
+/* 24. Retorne todos os logradouros e bairros, indicando se pertencem ou não a uma pessoa.*/
+
+/* 25. Selecione os produtos que têm preço unitário superior à média.*/
+
+/* 26. Liste os clientes que fizeram compras em cidades com mais de 1 milhão de habitantes.*/

@@ -1,6 +1,6 @@
 /* 1. Altere a tabela de débitos para corrigir o campo situacao_debito. Se o débito estiver 
  * vencido e não for 'Negociado' nem 'Pago', informe 'Atrasado'. */
-UPDATE DEBITOS 
+UPDATE DEBITOS  
 SET debitos.situacao_debito = 'Atrasado'
 	WHERE ((CURRENT_DATE - DEBITOS.DATAVENCIMENTO) < 0) AND situacao_debito = 'Pendente'
 	
@@ -34,10 +34,11 @@ LEFT JOIN pessoa p ON p.ID_PESSOA = f.ID_PESSOA
 WHERE ID_FORNECEDOR = (SELECT p.ID_FORNECEDOR FROM PRODUTO p WHERE p.QUANTIDADE_ESTOQUE IS NULL)
 
 /* 8. Liste os clientes que já realizaram compras com débitos vencidos.*/
-SELECT p.nome FROM PESSOA p 
-LEFT JOIN CLIENTE c2 ON p.ID_PESSOA = c2.ID_PESSOA 
-WHERE (CURRENT_DATE - DEBITOS.DATAVENCIMENTO > 0) 
-!!!!!!
+SELECT p.nome FROM DEBITOS d 
+INNER JOIN CLIENTE c ON c.ID_CLIENTE = d.ID_CLIENTE 
+INNER JOIN PESSOA p ON p.ID_PESSOA = c.ID_PESSOA
+WHERE d.SITUACAO_DEBITO = 'Atrasado'
+
 
 /* 9. Selecione os clientes que possuem itens no carrinho de compras e possuem débitos vencidos.*/
 /* NÃO ERA PARA REALIZAR */
@@ -45,9 +46,23 @@ WHERE (CURRENT_DATE - DEBITOS.DATAVENCIMENTO > 0)
 
 /* 10. Selecione os 10 maiores devedores trazendo código, nome, idade e a 
  * soma total dos débitos vencidos e a soma total dos débitos pagos.*/
-SELECT p.ID_PESSOA , p.nome, ((CURRENT_DATE - p.data_nascimento)/365) FROM PESSOA p
-LEFT JOIN PAGAMENTO p2 ON p2.VALOR_DIFERENCA < 0
-!!!!!! soma !!!!!!
+SELECT FIRST 10 c.ID_CLIENTE
+, p.NOME
+, EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM p.DATA_NASCIMENTO) AS IDADE
+, COALESCE( (SELECT SUM(d.VALOR_TOTAL)
+FROM DEBITOS d
+WHERE d.ID_CLIENTE = c.ID_CLIENTE
+AND d.DATAVENCIMENTO < CURRENT_DATE
+AND D.SITUACAO_DEBITO IN ('Atrasado', 'Pendente')),0) AS debito_pendente
+, (SELECT SUM(d.VALOR_TOTAL)
+FROM DEBITOS d
+WHERE d.ID_CLIENTE = c.ID_CLIENTE
+AND D.SITUACAO_DEBITO = 'Pago') AS debito_pago
+FROM PESSOA p
+INNER JOIN CLIENTE c ON C.ID_PESSOA = P.ID_PESSOA
+ORDER BY 4 DESC
+
+/* NESTA ATIVIDADE EU TIVE A AJUDA DO MATHEUS, QUE TEVE O AUXÍLIO DA PROFESSORA NA RESOLUÇÃO */
 
 
 /* 11. Atualize o preço unitário de todos os produtos com estoque inferior a 10 unidades para mais 10%.*/
@@ -55,91 +70,133 @@ UPDATE PRODUTO p
 SET p.PRECO_UNITARIO = (p.PRECO_UNITARIO + ((p.PRECO_UNITARIO / 100) * 10))
 	WHERE p.QUANTIDADE_ESTOQUE < 10 
 
-SELECT * FROM HISTORICO_COMPRAS_CLIENTE 
-SELECT * FROM HISTORICO_PRECOS hp 
-SELECT * FROM DEBITOS d 
-SELECT * FROM CLIENTE c 
-
 /* 12. Modifique o status de entrega para 'Concluído' em todas as entregas realizadas antes de '2024-01-01'.*/
 /* NÃO ERA PARA REALIZAR */
 
 /* 13. Altere todos os débitos que estão com situação = 'Atrasado' para 'Pagos' 
  * se o mesmo ter o registro na tabela de pagamento.*/
-UPDATE DEBITOS 
-SET debitos.situacao_debito = 'Pago'
+UPDATE DEBITOS d
+SET d.situacao_debito = 'Pago'
 	WHERE  situacao_debito = 'Atrasado'
 
 /* 15. Selecione as vendas entre o mês de dezembro de 2023 até janeiro de 2024.*/
-SELECT * FROM VENDA 
-WHERE DATA_VENDA BETWEEN '2023-12-01' AND '2024-01-01'
+SELECT * FROM VENDA v
+WHERE v.DATA_VENDA BETWEEN '2023-12-01' AND '2024-01-01'
 	
 /* 16. Liste os produtos com estoque entre 5 e 20 unidades.*/
-SELECT nome FROM PRODUTO
-WHERE QUANTIDADE_ESTOQUE BETWEEN 5 AND 20
+SELECT nome FROM PRODUTO p
+WHERE p.quantidade_estoque BETWEEN 5 AND 20
 
 /* 17. Retorne todas as pessoas com nomes que começam com 'A'.*/
 SELECT nome FROM PESSOA p 
 WHERE nome LIKE 'A%'
 
 /* 18. Selecione os produtos que não foram vendidos.*/
-SELECT nome FROM PRODUTO p 
-LEFT JOIN VENDA v ON p.ID_PRODUTO <> v.ID_PRODUTO
-WHERE 
-!!!!!!!!!!
-SELECT * FROM HISTORICO_COMPRAS_CLIENTE hcc 
+SELECT p.nome FROM PRODUTO p 
+LEFT JOIN ITENSVENDA i ON i.ID_PRODUTO = p.ID_PRODUTO
+WHERE i.ID_PRODUTO IS NULL
 
 /* 19. Liste os produtos vendidos para os clientes 'Carla Souza', 'Larissa Ferreira'.*/
-SELECT p.nome FROM PRODUTO p 
-LEFT JOIN 
-!!!!!!!!!
+SELECT * FROM HISTORICO_COMPRAS_CLIENTE hcc
+WHERE ID_CLIENTE IN (SELECT ID_CLIENTE FROM CLIENTE c WHERE c.id_pessoa IN (SELECT ID_PESSOA FROM PESSOA p
+WHERE p.nome = 'Carla Souza' OR p.nome = 'Larissa Ferreira'))
+
 
 /* 20. Mostre as pessoas que são clientes OU fornecedores.*/
 SELECT nome FROM PESSOA p 
-LEFT JOIN CLIENTE c ON p.ID_PESSOA = c.ID_PESSOA AND
+LEFT JOIN CLIENTE c ON p.ID_PESSOA = c.ID_PESSOA 
 LEFT JOIN FORNECEDOR f ON p.ID_PESSOA = f.ID_PESSOA
-!!!!!!!!!
 
 /* 21. Retorne todas as informações da venda com detalhes do cliente e forma de pagamento.*/
-SELECT * FROM VENDA v 
-!!!!!!!!!!
+SELECT v.ID_VENDA, v.ID_PESSOA, v.data_venda, v.valor_total, v.ID_FUNCIONARIO, p.nome, p.email, p.telefone, p.data_nascimento, fp.descricao FROM VENDA v 
+LEFT JOIN PESSOA p ON p.ID_PESSOA = v.ID_PESSOA 
+LEFT JOIN CLIENTE c ON c.ID_PESSOA = p.ID_PESSOA 
+LEFT JOIN PAGAMENTO p2 ON p2.ID_CLIENTE = c.ID_CLIENTE 
+LEFT JOIN FORMA_PAGAMENTO fp ON fp.ID_FORMA_PAGAMENTO = p2.ID_FORMA_PAGAMENTO 
+
+
 /* 22. Mostre todas as compras de um determinado produto ('Placa de Captura'), incluindo detalhes do produto.*/
 SELECT * FROM PRODUTO p 
-WHERE p.nome = 'Placa de Captura' AND (SELECT * FROM HISTORICO_COMPRAS_CLIENTE hcc WHERE hcc. )
-!!!!!!!!!!!!
-
+LEFT JOIN ITENSVENDA i ON i.ID_PRODUTO = p.ID_PRODUTO
+WHERE p.nome = 'Placa de Captura' 
+ 
 /* 23. Combine os nomes dos fornecedores com os nomes dos clientes e suas respectivas 
  * idades que irão fazer no ano de 2025.*/
+SELECT p.nome, (((CURRENT_DATE - p.data_nascimento)/365)+1) FROM PESSOA p 
+LEFT JOIN FORNECEDOR f ON p.ID_PESSOA = f.ID_PESSOA 
 
 /* 24. Retorne todos os logradouros e bairros, indicando se pertencem ou não a uma pessoa.*/
-SELECT * FROM LOGRADOURO l AND FROM BAIRRO b 
+SELECT l.nome AS lagradouro, b.nome AS bairro, e.ID_PESSOA FROM ENDERECO e
+LEFT JOIN LOGRADOURO l ON l.ID_LOGRADOURO = e.ID_LOGRADOURO
+LEFT JOIN BAIRRO b ON b.ID_BAIRRO = e.ID_BAIRRO
 
 /* 25. Selecione os produtos que têm preço unitário superior à média.*/
-SELECT p.nome FROM PRODUTO p 
-GROUP BY p.PRECO_UNITARIO 
-HAVING p.PRECO_UNITARIO > AVG(p.PRECO_UNITARIO) 
-
-SELECT * FROM PESSOA p 
-
+SELECT p.preco_unitario FROM PRODUTO p
+GROUP BY p.preco_unitario
+HAVING p.preco_unitario > AVG(p.preco_unitario)
+ 
 /* 26. Liste os clientes que fizeram compras em cidades com mais de 1 milhão de habitantes.*/
-SELECT p.nome FROM PESSOA p 
-LEFT JOIN CLIENTE c ON p.ID_PESSOA = c.ID_PESSOA 
+SELECT c.ID_PESSOA, hcc.ID_VENDA, p.NOME, e.ID_MUNICIPIO, m.POPULACAO FROM MUNICIPIO m
+LEFT JOIN ENDERECO e ON e.ID_MUNICIPIO = m.ID_MUNICIPIO
+LEFT JOIN CLIENTE c ON c.ID_PESSOA = e.ID_PESSOA
+LEFT JOIN PESSOA p ON p.ID_PESSOA = c.ID_PESSOA
+INNER JOIN HISTORICO_COMPRAS_CLIENTE hcc ON hcc.ID_CLIENTE = c.ID_CLIENTE
+WHERE POPULACAO > 1000000
 
 /* 27. Mostre a quantidade total de produtos vendidos por fornecedor. */
+SELECT f.ID_FORNECEDOR, p2.nome AS NOME_FORNECEDOR, SUM(iv.quantidade) AS TOTAL_PRODUTOS_VENDIDOS FROM FORNECEDOR f
+INNER JOIN PESSOA p2 ON p2.ID_PESSOA = f.ID_PESSOA
+INNER JOIN PRODUTO p ON f.ID_FORNECEDOR = p.ID_FORNECEDOR
+INNER JOIN ITENSVENDA iv ON p.ID_PRODUTO = iv.ID_PRODUTO
+GROUP BY f.ID_fornecedor, p2.nome
 
 /* 28. Liste os clientes que realizaram compras com valor total superior a R$ 500. */
+SELECT p.nome FROM CLIENTE c 
+LEFT JOIN PESSOA p ON p.ID_PESSOA = c.ID_PESSOA
+LEFT JOIN HISTORICO_COMPRAS_CLIENTE hcc ON hcc.ID_CLIENTE = c.ID_CLIENTE
+WHERE hcc.VALOR_TOTAL > 500
 
 /* 29. Retorne todas as pessoas com seus endereços de correspondência e residência, se tiverem. */
+SELECT p.nome, e.numero, e.tipo_endereco, e.complemento, b.nome, e.observacao FROM PESSOA p 
+LEFT JOIN ENDERECO e ON e.ID_PESSOA = p.ID_PESSOA 
+LEFT JOIN BAIRRO b ON b.ID_BAIRRO = e.ID_BAIRRO 
 
 /* 30. Liste os produtos e seus preços, juntamente com o nome do fornecedor, mesmo que não tenham fornecedor. */
+SELECT p.nome, p.preco_unitario, p.nome FROM PRODUTO p 
+LEFT JOIN FORNECEDOR f ON f.ID_FORNECEDOR = p.ID_FORNECEDOR
+LEFT JOIN PESSOA p2 ON p2.ID_PESSOA = f.ID_PESSOA 
 
 /* 31. Liste os produtos em ordem decrescente de quantidade em estoque. */
+SELECT p.nome FROM PRODUTO p
+ORDER BY p.quantidade_estoque DESC 
 
 /* 32. Retorne as vendas em ordem crescente de valor total. */
+SELECT v.valor_total FROM VENDA v
+ORDER BY valor_total ASC 
 
 /* 33. Liste os produtos com quantidade em estoque menor que a média de todos os produtos. */
+SELECT p.quantidade_estoque FROM PRODUTO p 
+GROUP BY p.quantidade_estoque 
+HAVING p.quantidade_estoque < AVG(p.quantidade_estoque)
 
 /* 34. Selecione todas as pessoas cujo número de telefone seja igual ao de outra pessoa. */
+SELECT DISTINCT p1.* FROM PESSOA p1
+INNER JOIN PESSOA p2 ON p1.telefone = p2.telefone
+WHERE p1.ID_PESSOA <> p2.ID_PESSOA
 
 /* 35. Aumente em 10% o preço unitário de todos os produtos fornecidos por fornecedores de São Paulo. */
-
+UPDATE PRODUTO SET PRODUTO.PRECO_UNITARIO = PRODUTO.PRECO_UNITARIO * 1.1
+WHERE PRODUTO.ID_FORNECEDOR IN (
+	SELECT FORNECEDOR.ID_FORNECEDOR
+	FROM FORNECEDOR
+	INNER JOIN PESSOA ON FORNECEDOR.ID_PESSOA = PESSOA.ID_PESSOA
+	INNER JOIN ENDERECO ON PESSOA.ID_PESSOA = ENDERECO.ID_PESSOA
+	INNER JOIN MUNICIPIO ON ENDERECO.ID_MUNICIPIO = MUNICIPIO.ID_MUNICIPIO
+	WHERE MUNICIPIO.NOME = 'São Paulo'
+)
+/* TIVE AJUDA DO HEITOR KENZO NESTA ATIVIDADE */
+ 
 /* 36. Lista todas as vendas que estão com débito 'Negociado'. */
+SELECT * FROM VENDA v 
+LEFT JOIN DEBITOS d ON d.ID_VENDA = v.ID_VENDA 
+WHERE SITUACAO_DEBITO = 'Negociado'
